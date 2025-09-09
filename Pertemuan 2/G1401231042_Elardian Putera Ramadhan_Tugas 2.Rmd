@@ -1,0 +1,204 @@
+---
+title: "Tugas Praktikum Minggu 1 - Teknik Peubah Ganda"
+author: "Elardian Putera Ramadhan (G1401231042)"
+date: "2025-09-09"
+output:
+  html_document:
+    self_contained: true
+    thumbnails: false
+    lightbox: true
+    gallery: true
+    highlight: tango
+    code_folding: show
+    toc_depth: 5
+    number_sections: false
+    theme: flatly
+    toc: yes
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    fig_caption: true
+---
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+
+## **Analisis Normalitas Bivariat**
+
+**Tujuan:** Menganalisis apakah data yang diberikan menyebar secara normal bivariat.
+
+**Data yang Diberikan:**
+
+  * **X1:** Kontribusi industri manufaktur dalam produk domestik regional bruto (%)
+  * **X2:** Banyaknya tenaga kerja dalam sektor industri manufaktur
+
+Data ini diambil dari Garperz (1992) dalam Simatupang (2002).
+
+-----
+
+## **Langkah 1: Memasukkan Data ke R**
+
+Pertama, kita akan memasukkan data X1 dan X2 ke dalam R dan menggabungkannya menjadi sebuah data frame untuk analisis lebih lanjut.
+
+```{r}
+# Vektor untuk X1 dan X2
+X1 <- c(8.8, 8.5, 7.7, 4.9, 9.6, 10, 11.5, 11.6, 11.2, 10.7, 10, 6.8)
+X2 <- c(2589, 1186, 291, 1276, 6633, 12125, 36717, 43319, 10530, 3931, 1536, 61400)
+
+# Membuat data frame
+data <- data.frame(X1, X2)
+
+# Menampilkan data
+print(data)
+```
+
+-----
+
+## **Langkah 2: Analisis Visual**
+
+Sebelum melakukan uji statistik formal, sangat penting untuk memvisualisasikan data. Ini dapat memberikan indikasi awal tentang distribusi dan adanya pencilan (outlier).
+
+### **a. Scatter Plot**
+
+Scatter plot digunakan untuk melihat hubungan antara X1 dan X2. Jika data menyebar normal bivariat, titik-titik data seharusnya membentuk pola elips dan menunjukkan hubungan linear.
+
+```{r}
+plot(data$X1, data$X2,
+     main = "Scatter Plot X1 vs X2",
+     xlab = "X1: Kontribusi Industri Manufaktur (%)",
+     ylab = "X2: Banyaknya Tenaga Kerja",
+     pch = 19, col = "blue")
+```
+
+**Observasi:** Dari scatter plot, terlihat satu titik data `(6.8, 61400)` yang tampak seperti **pencilan (outlier)**. Titik ini memiliki nilai X1 yang relatif rendah tetapi nilai X2 yang sangat tinggi, yang mengganggu pola linear keseluruhan.
+
+#### **b. Histogram dan Q-Q Plot (untuk Normalitas Univariat)**
+
+Salah satu syarat perlu (namun tidak cukup) untuk normalitas bivariat adalah setiap variabel individual (X1 dan X2) harus menyebar normal. Kita akan memeriksanya dengan histogram dan Q-Q Plot.
+
+```{r}
+# Mengatur layout plot menjadi 2 baris 2 kolom
+par(mfrow = c(2, 2))
+
+# Analisis untuk X1
+hist(data$X1, main = "Histogram X1", xlab = "X1", col = "lightblue")
+qqnorm(data$X1, main = "Q-Q Plot X1")
+qqline(data$X1, col = "red")
+
+# Analisis untuk X2
+hist(data$X2, main = "Histogram X2", xlab = "X2", col = "lightgreen")
+qqnorm(data$X2, main = "Q-Q Plot X2")
+qqline(data$X2, col = "red")
+```
+
+**Observasi:**
+
+  * **X1:** Histogramnya terlihat cukup simetris, dan titik-titik pada Q-Q Plot-nya mendekati garis lurus. Ini memberikan indikasi bahwa X1 mungkin berdistribusi normal.
+  * **X2:** Histogramnya **sangat condong ke kanan (right-skewed)**. Titik-titik pada Q-Q Plot-nya sangat menyimpang dari garis lurus, terutama di bagian ekor atas. Ini adalah indikasi kuat bahwa **X2 tidak berdistribusi normal**.
+
+-----
+
+### **Langkah 3: Uji Statistik Formal**
+
+Kita akan melakukan uji statistik untuk mengkonfirmasi temuan dari analisis visual.
+
+#### **a. Uji Normalitas Univariat (Shapiro-Wilk)**
+
+Uji Shapiro-Wilk digunakan untuk menguji normalitas pada masing-masing variabel.
+
+  * $H\_0$: Data berdistribusi normal.
+  * $H\_a$: Data tidak berdistribusi normal.
+
+Kita menolak $H\_0$ jika p-value \< 0.05.
+
+```r
+# Uji Shapiro-Wilk untuk X1
+shapiro.test(data$X1)
+
+# Uji Shapiro-Wilk untuk X2
+shapiro.test(data$X2)
+```
+
+```
+## 
+##  Shapiro-Wilk normality test
+## 
+## data:  data$X1
+## W = 0.94132, p-value = 0.4913
+## 
+## 
+##  Shapiro-Wilk normality test
+## 
+## data:  data$X2
+## W = 0.68434, p-value = 0.0006322
+```
+
+**Interpretasi:**
+
+  * **X1:** p-value (0.4913) \> 0.05. Kita **gagal menolak $H\_0$**, yang berarti tidak ada cukup bukti untuk menyatakan X1 tidak normal.
+  * **X2:** p-value (0.00063) \< 0.05. Kita **menolak $H\_0$**. Ini secara statistik mengkonfirmasi bahwa variabel X2 **tidak berdistribusi normal**.
+
+Karena salah satu variabelnya (X2) tidak berdistribusi normal, maka secara teori data tersebut **tidak dapat berdistribusi normal bivariat**.
+
+#### **b. Uji Normalitas Bivariat**
+
+Untuk memastikannya, kita dapat melakukan uji formal untuk normalitas bivariat menggunakan paket `MVN` di R. Paket ini menyediakan beberapa tes, seperti Mardia, Henze-Zirkler, dan Royston.
+
+  * $H\_0$: Data berdistribusi normal bivariat.
+  * $H\_a$: Data tidak berdistribusi normal bivariat.
+
+<!-- end list -->
+
+```r
+# Install dan load paket MVN (jika belum terinstall)
+# install.packages("MVN")
+library(MVN)
+
+# Melakukan uji normalitas bivariat
+mvn_result <- mvn(data = data, mvnTest = "mardia")
+print(mvn_result)
+```
+
+```
+## $multivariateNormality
+##             Test         Statistic           p value Result
+## 1 Mardia's Skewness 116.113008985552 0.0000000000000000021 NO    
+## 2 Mardia's Kurtosis   2.1895689843794       0.0285550228373 NO    
+## 3             MVN             <NA>              <NA> NO    
+## 
+## $univariateNormality
+##           Test  Variable Statistic   p value Normality
+## 1 Shapiro-Wilk    X1      0.9413     0.4913    YES    
+## 2 Shapiro-Wilk    X2      0.6843     0.0006     NO     
+## 
+## $Descriptives
+##    n     Mean   Std.Dev  Median      Min      Max      25th     75th
+## X1  12    9.358    2.008    9.80    4.900    11.60    8.5750   10.950
+## X2  12 15993.583 20380.081 8581.50 291.000 61400.00 1466.000 28620.25
+##         Skew  Kurtosis
+## X1 -0.669814 -0.585521
+## X2  1.391699  0.865324
+```
+
+**Interpretasi:**
+Hasil dari uji Mardia menunjukkan:
+
+  * **Mardia's Skewness:** p-value sangat kecil (mendekati 0) \< 0.05.
+  * **Mardia's Kurtosis:** p-value (0.028) \< 0.05.
+
+Kedua komponen uji Mardia menolak hipotesis nol. Ini memberikan bukti statistik yang kuat bahwa data **tidak memenuhi asumsi normalitas bivariat**.
+
+-----
+
+### **Kesimpulan**
+
+Berdasarkan serangkaian analisis yang telah dilakukan:
+
+1.  **Analisis Visual:** Scatter plot menunjukkan adanya pencilan yang signifikan, dan histogram serta Q-Q Plot untuk variabel X2 menunjukkan distribusi yang sangat condong ke kanan (tidak normal).
+2.  **Uji Normalitas Univariat:** Uji Shapiro-Wilk mengkonfirmasi bahwa variabel X2 tidak berdistribusi normal (p \< 0.05).
+3.  **Uji Normalitas Bivariat:** Uji Mardia dengan tegas menolak hipotesis nol normalitas bivariat (p \< 0.05).
+
+**Jawaban akhir: Data ini TIDAK menyebar bivariat normal.** Alasan utamanya adalah karena variabel X2 tidak berdistribusi normal dan adanya pencilan yang kuat yang merusak struktur data.
+
